@@ -1,3 +1,3 @@
 # ClassClapNetwork
 
-A description of this package.
+A simple Network Class that include POST request calling funtions
