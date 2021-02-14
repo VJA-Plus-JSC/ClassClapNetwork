@@ -13,18 +13,29 @@ public enum NetworkError: Error {
     case transportError
     case httpSeverSideError(Data, statusCode: HTTPStatus)
 }
-
+/// Possible status code, will get raw value as 0 for the `unknown` case
+/// - 1xxs – Informational responses: The server is thinking through the request.
+/// - 2xxs – Success! The request was successfully completed and the server gave the browser the expected response.
+/// - 3xxs –Redirection: You got redirected somewhere else. The request was received, but there’s a redirect of some kind.
+/// - 4xxs – Client errors: Page not found. The site or page couldn’t be reached.
+/// (The request was made, but the page isn’t valid —
+/// this is an error on the website’s side of the conversation and often appears when a page doesn’t exist on the site.)
+/// - 5xxs – Server errors: Failure. A valid request was made by the client but the server failed to complete the request.
 public enum HTTPStatus: Int {
+    case unknown
+    
     case success = 200
 
+    case PermanentRedirect = 301
+    case TemporaryRedirect = 302
+    
     case badRequest = 400
     case notAuthorized = 401
     case forbidden = 403
     case notFound = 404
 
     case internalServerError = 500
-    
-    case unknown = -1
+    case serviceUnavailable = 503
     
     public init(_ code: Int) {
         self = HTTPStatus.init(rawValue: code) ?? .unknown
@@ -61,6 +72,15 @@ open class Network {
     ///   - errorHandle: Handling when there is an error occurs with the request.
     ///   - httpErrorHandler: Handling when there is a HTTP server-side error, which the response status code is not 2xx.
     ///   - handler: Handling when successfully got the response.
+    @available(
+    *,
+    deprecated,
+    message:
+    """
+    this function is decrpecated. \
+    Please use sendPostRequest(to:, withBearerToken:, parameters:, completionHandler:) instead
+    """
+    )
     public static func postRequest(
         withUrl urlString: String,
         withBearerToken token: String? = nil,
