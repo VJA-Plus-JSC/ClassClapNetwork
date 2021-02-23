@@ -2,12 +2,20 @@ import XCTest
 @testable import ClassClapNetwork
 
 final class ClassClapNetworkTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        let url = "https://jsonplaceholder.typicode.com/todos/1"
-        Network.shared.sendPostRequest(to: url) { result in
+    func testGET() {
+        let url = "https://jsonplaceholder.typicode.com/posts/1/comments"
+        Network.shared.sendRequest(as: .get, to: url) {
+            if case .success(_) = $0 {
+                XCTAssertTrue(true)
+            } else {
+                XCTAssertTrue(false)
+            }
+        }
+    }
+    
+    func testPost() {
+        let url = "https://jsonplaceholder.typicode.com/posts"
+        Network.shared.sendRequest(to: url) { result in
             switch result {
             case .failure(_):
                 XCTAssertTrue(false)
@@ -18,6 +26,7 @@ final class ClassClapNetworkTests: XCTestCase {
     }
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testGET", testGET),
+        ("testPOST", testPost),
     ]
 }
