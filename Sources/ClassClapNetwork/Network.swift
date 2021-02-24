@@ -200,12 +200,13 @@ extension Network {
         
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // add Authorization information if has
         if let authorization = authorization {
             if case let .bearerToken(token) = authorization, let bearerToken = token {
                 request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
             }
         }
-
         
         if let params = parameters {
             // only put parameter in HTTP body of a POST request, for GET, add directly to the url
