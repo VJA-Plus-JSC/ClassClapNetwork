@@ -71,12 +71,7 @@ extension Network {
     ///   - errorHandle: Handling when there is an error occurs with the request.
     ///   - httpErrorHandler: Handling when there is a HTTP server-side error, which the response status code is not 2xx.
     ///   - handler: Handling when successfully got the response.
-    @available(
-    *,
-    deprecated,
-    message:
-        "this function is decrpecated.Please use sendPostRequest(to:, withBearerToken:, parameters:, completionHandler:) instead"
-    )
+    @available(*, deprecated, message: "this function is decrpecated.Please use sendPostRequest(to:, withBearerToken:, parameters:, completionHandler:) instead")
     public static func postRequest(
         withUrl urlString: String,
         withBearerToken token: String? = nil,
