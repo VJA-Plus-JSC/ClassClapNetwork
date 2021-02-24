@@ -10,6 +10,15 @@ import UIKit
 
 open class Network {
     
+    /// shared instance of Network class
+    public static let shared = Network()
+    
+    /// network handler closure
+    public typealias NetworkHandler = (Result<Data, NetworkError>) -> ()
+    
+    /// private init to avoid unexpected instances allocate
+    private init() {}
+    
     public enum Method: String {
         case get = "GET"
         case post = "POST"
@@ -50,13 +59,9 @@ open class Network {
             self = HTTPStatus.init(rawValue: code) ?? .unknown
         }
     }
-    
-    /// shared instance of Network class
-    public static let shared = Network()
-    
-    /// network handler closure
-    public typealias NetworkHandler = (Result<Data, NetworkError>) -> ()
-    
+}
+
+extension Network {
     /// Call a POST request. All the error handlers will stop the function immidiately
     /// - Parameters:
     ///   - urlString: plain string of the url.
@@ -174,7 +179,6 @@ open class Network {
     ///   - token: the bearer token
     ///   - params: http request body's parameters.
     ///   - handler: Handling when completion, included success and failure
-    ///
     public func sendRequest(as method: Method = .post,
                             to link: String,
                             withBearerToken token: String? = nil,
