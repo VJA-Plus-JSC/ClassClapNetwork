@@ -172,7 +172,7 @@ extension Network {
     /// - Parameters:
     ///   - method: HTTP method, `POST` in default
     ///   - url: plain string of the url.
-    ///   - token: the bearer token
+    ///   - authorization: the authorization method, such as bearer token for example
     ///   - params: http request body's parameters.
     ///   - handler: Handling when completion, included success and failure
     public func sendRequest(as method: Method = .post,
