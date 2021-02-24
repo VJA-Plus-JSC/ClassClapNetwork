@@ -216,25 +216,24 @@ extension Network {
                     let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
                     request.httpBody = jsonParams
                 } catch {
-                    debugPrint(
-                        "ClassClapNetwork - Error: unable to add parameters to POST request."
-                    )
-                    return handler(.failure(.badRequest(params)))
+                    handler(.failure(.badRequest(params)))
+                    return
                 }
             case .get:
                 guard var finalUrl = URLComponents(string: encodedUrl) else {
                     return handler(.failure(.badUrl))
                 }
+                
                 finalUrl.queryItems = params.map { key, value in
                     URLQueryItem(name: key, value: value as? String)
                 }
+                
                 finalUrl.percentEncodedQuery =
                     finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
 
                 // re-assign the url with parameter components to the request
                 request.url = finalUrl.url
             }
-            
         }
         
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -249,7 +248,8 @@ extension Network {
                 return
             }
             
-            guard let response = response as? HTTPURLResponse, let responseBody = data else {
+            guard let response = response as? HTTPURLResponse, let responseBody = data
+            else {
                 DispatchQueue.main.async {
                     handler(
                         .failure(.transportError)
@@ -261,13 +261,13 @@ extension Network {
             let statusCode = HTTPStatus(response.statusCode)
             
             if case .success = statusCode {
-                // success handling
+                /// success handling
                 DispatchQueue.main.async {
                     handler(.success(responseBody))
                 }
             } else {
-                // handle HTTP server-side error
-                
+                /// HTTP server-side error handling
+                // Printout the information
                 if let responseString = String(bytes: responseBody, encoding: .utf8) {
                     debugPrint(responseString)
                 } else {
@@ -276,6 +276,7 @@ extension Network {
                     debugPrint(responseBody as NSData)
                 }
                 
+                // return with error handler
                 DispatchQueue.main.async {
                     handler(
                         .failure(.httpSeverSideError(responseBody, statusCode: statusCode))
@@ -285,7 +286,6 @@ extension Network {
             }
         }.resume()
     }
-    
 }
 
 extension Network.NetworkError: LocalizedError {
