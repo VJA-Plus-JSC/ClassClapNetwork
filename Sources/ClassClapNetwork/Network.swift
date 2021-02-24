@@ -9,7 +9,7 @@
 import UIKit
 
 open class Network {
-    
+        
     /// shared instance of Network class
     public static let shared = Network()
     
@@ -29,6 +29,10 @@ open class Network {
         case transportError
         case httpSeverSideError(Data, statusCode: HTTPStatus)
         case badRequest([String: Any?])
+    }
+    
+    public enum Authorization {
+        case bearerToken(token: String?)
     }
     
     /// Possible status code, will get raw value as 0 for the `unknown` case
@@ -71,7 +75,7 @@ extension Network {
     ///   - errorHandle: Handling when there is an error occurs with the request.
     ///   - httpErrorHandler: Handling when there is a HTTP server-side error, which the response status code is not 2xx.
     ///   - handler: Handling when successfully got the response.
-    @available(*, deprecated, message: "Decrpecated! Use sendRequest(as:,to:,withBearerToken:,parameters:,completion:) instead")
+    @available(*, deprecated, message: "Decrpecated! Use sendRequest(as:,to:,authorization:,parameters:,completion:) instead")
     public static func postRequest(
         withUrl urlString: String,
         withBearerToken token: String? = nil,
@@ -151,7 +155,7 @@ extension Network {
     ///   - token: the bearer token
     ///   - params: http request body's parameters.
     ///   - completionHandler: Handling when completion, included success and failure
-    @available(*, deprecated, renamed: "sendRequest")
+    @available(*, deprecated, message: "Decrpecated! Use sendRequest(as:,to:,authorization:,parameters:,completion:) instead")
     public func sendPostRequest(to url: String,
                                 withBearerToken token: String? = nil,
                                 parameters params: [String : Any?]? = nil,
@@ -159,7 +163,7 @@ extension Network {
         
         sendRequest(as: .post,
                     to: url,
-                    withBearerToken: token,
+                    authorization: .bearerToken(token: token),
                     parameters: params,
                     completion: completionHandler)
     }
@@ -173,7 +177,7 @@ extension Network {
     ///   - handler: Handling when completion, included success and failure
     public func sendRequest(as method: Method = .post,
                             to link: String,
-                            withBearerToken token: String? = nil,
+                            authorization: Authorization? = nil,
                             parameters: [String : Any?]? = nil,
                             completion handler: @escaping NetworkHandler) {
         
@@ -196,9 +200,12 @@ extension Network {
         
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let authorization = authorization {
+            if case let .bearerToken(token) = authorization, let bearerToken = token {
+                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+            }
         }
+
         
         if let params = parameters {
             // only put parameter in HTTP body of a POST request, for GET, add directly to the url
