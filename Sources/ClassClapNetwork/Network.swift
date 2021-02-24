@@ -75,10 +75,10 @@ extension Network {
     *,
     deprecated,
     message:
-    """
-    this function is decrpecated. \
-    Please use sendPostRequest(to:, withBearerToken:, parameters:, completionHandler:) instead
-    """
+        """
+        this function is decrpecated. \
+        Please use sendPostRequest(to:, withBearerToken:, parameters:, completionHandler:) instead
+        """
     )
     public static func postRequest(
         withUrl urlString: String,
