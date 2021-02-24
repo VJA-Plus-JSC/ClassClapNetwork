@@ -249,8 +249,14 @@ extension Network {
                 return
             }
             
-            let response = response as! HTTPURLResponse
-            let responseBody = data!
+            guard let response = response as? HTTPURLResponse, let responseBody = data else {
+                DispatchQueue.main.async {
+                    handler(
+                        .failure(.transportError)
+                    )
+                }
+                return
+            }
             
             let statusCode = HTTPStatus(response.statusCode)
             
