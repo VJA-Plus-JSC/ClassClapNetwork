@@ -21,14 +21,15 @@ open class Network {
         case httpSeverSideError(Data, statusCode: HTTPStatus)
         case badRequest([String: Any?])
     }
+    
     /// Possible status code, will get raw value as 0 for the `unknown` case
-    /// - 1xxs – Informational responses: The server is thinking through the request.
-    /// - 2xxs – Success! The request was successfully completed and the server gave the browser the expected response.
-    /// - 3xxs –Redirection: You got redirected somewhere else. The request was received, but there’s a redirect of some kind.
-    /// - 4xxs – Client errors: Page not found. The site or page couldn’t be reached.
+    /// - 1xxs – `Informational responses`: The server is thinking through the request.
+    /// - 2xxs – `Success`: The request was successfully completed and the server gave the browser the expected response.
+    /// - 3xxs – `Redirection`: You got redirected somewhere else. The request was received, but there’s a redirect of some kind.
+    /// - 4xxs – `Client errors`: Page not found. The site or page couldn’t be reached.
     /// (The request was made, but the page isn’t valid —
     /// this is an error on the website’s side of the conversation and often appears when a page doesn’t exist on the site.)
-    /// - 5xxs – Server errors: Failure. A valid request was made by the client but the server failed to complete the request.
+    /// - 5xxs – `Server errors`: Failure. A valid request was made by the client but the server failed to complete the request.
     public enum HTTPStatus: Int {
         case unknown
         
@@ -256,7 +257,10 @@ open class Network {
                 }
             } else {
                 // handle HTTP server-side error
-                if let _ = String(bytes: responseBody, encoding: .utf8) { } else {
+                
+                if let responseString = String(bytes: responseBody, encoding: .utf8) {
+                    debugPrint(responseString)
+                } else {
                     // Otherwise print a hex dump of the body.
                     debugPrint("ClassClapNetwork: hex dump of the body")
                     debugPrint(responseBody as NSData)
@@ -264,9 +268,7 @@ open class Network {
                 
                 DispatchQueue.main.async {
                     handler(
-                        .failure(
-                            .httpSeverSideError(responseBody, statusCode: statusCode)
-                        )
+                        .failure(.httpSeverSideError(responseBody, statusCode: statusCode))
                     )
                 }
                 return
