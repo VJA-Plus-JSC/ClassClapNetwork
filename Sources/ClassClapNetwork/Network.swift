@@ -65,7 +65,140 @@ open class Network {
     }
 }
 
+extension Network.NetworkError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .badUrl:
+            return "ClassClapNetwork: This seem not a vail url"
+        case .transportError:
+            return "ClassClapNetwork: There is a transport error"
+        case .httpSeverSideError( _,let statusCode):
+            let code = statusCode.rawValue
+            return "ClassClapNetwork: There is a http server error with status code \(code)"
+        case .badRequest(let parameters):
+            return "this parameter set is invalid, check it again \n\(parameters)"
+        }
+    }
+}
+
 extension Network {
+
+    /// Call a HTTP request. All the error handlers will stop the function immidiately
+    /// - Parameters:
+    ///   - method: HTTP method, `POST` in default
+    ///   - url: plain string of the url.
+    ///   - authorization: the authorization method, such as bearer token for example
+    ///   - params: http request body's parameters.
+    ///   - handler: Handling when completion, included success and failure
+    public func sendRequest(as method: Method = .post,
+                            to link: String,
+                            authorization: Authorization? = nil,
+                            parameters: [String : Any?]? = nil,
+                            completion handler: @escaping NetworkHandler) {
+
+        // encode url (to encode spaces for example)
+        guard let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        else {
+            handler(.failure(.badUrl))
+            return
+        }
+
+        guard let url = URL(string: encodedUrl) else {
+            // bad url
+            handler(.failure(.badUrl))
+            return
+        }
+
+        var request = URLRequest(url: url,
+                                 cachePolicy: .reloadIgnoringLocalCacheData,
+                                 timeoutInterval: 60.0)
+
+        request.httpMethod = method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // add Authorization information if has
+        if let authorization = authorization {
+            if case let .bearerToken(token) = authorization, let bearerToken = token {
+                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+            }
+        }
+
+        if let params = parameters {
+            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
+            switch method {
+            case .post:
+                do {
+                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
+                    request.httpBody = jsonParams
+                } catch {
+                    handler(.failure(.badRequest(params)))
+                    return
+                }
+            case .get:
+                guard var finalUrl = URLComponents(string: encodedUrl) else {
+                    return handler(.failure(.badUrl))
+                }
+
+                finalUrl.queryItems = params.map { key, value in
+                    // in case value is nil, replace by blank space instead
+                    URLQueryItem(name: key, value: String(describing: value ?? ""))
+                }
+
+                finalUrl.percentEncodedQuery =
+                    finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+
+                // re-assign the url with parameter components to the request
+                request.url = finalUrl.url
+            }
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+
+            // handle transport error
+            if let _ = error {
+                DispatchQueue.main.async {
+                    handler(.failure(.transportError))
+                }
+                return
+            }
+
+            guard let response = response as? HTTPURLResponse, let responseBody = data
+            else {
+                DispatchQueue.main.async {
+                    handler(.failure(.transportError))
+                }
+                return
+            }
+
+            let statusCode = HTTPStatus(response.statusCode)
+
+            if case .success = statusCode {
+                /// success handling
+                DispatchQueue.main.async {
+                    handler(.success(responseBody))
+                }
+            } else {
+                /// HTTP server-side error handling
+                // Printout the information
+                if let responseString = String(bytes: responseBody, encoding: .utf8) {
+                    debugPrint(responseString)
+                } else {
+                    // Otherwise print a hex dump of the body.
+                    debugPrint("😳 ClassClapNetwork: hex dump of the body")
+                    debugPrint(responseBody as NSData)
+                }
+
+                // return with error handler
+                DispatchQueue.main.async {
+                    handler(
+                        .failure(.httpSeverSideError(responseBody, statusCode: statusCode))
+                    )
+                }
+                return
+            }
+        }.resume()
+    }
+
     /// Call a POST request. All the error handlers will stop the function immidiately
     /// - Parameters:
     ///   - urlString: plain string of the url.
@@ -166,140 +299,5 @@ extension Network {
                     authorization: .bearerToken(token: token),
                     parameters: params,
                     completion: completionHandler)
-    }
-    
-    /// Call a HTTP request. All the error handlers will stop the function immidiately
-    /// - Parameters:
-    ///   - method: HTTP method, `POST` in default
-    ///   - url: plain string of the url.
-    ///   - authorization: the authorization method, such as bearer token for example
-    ///   - params: http request body's parameters.
-    ///   - handler: Handling when completion, included success and failure
-    public func sendRequest(as method: Method = .post,
-                            to link: String,
-                            authorization: Authorization? = nil,
-                            parameters: [String : Any?]? = nil,
-                            completion handler: @escaping NetworkHandler) {
-        
-        // encode url (to encode spaces for example)
-        guard let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        else {
-            handler(.failure(.badUrl))
-            return
-        }
-        
-        guard let url = URL(string: encodedUrl) else {
-            // bad url
-            handler(.failure(.badUrl))
-            return
-        }
-            
-        var request = URLRequest(url: url,
-                                 cachePolicy: .reloadIgnoringLocalCacheData,
-                                 timeoutInterval: 60.0)
-        
-        request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // add Authorization information if has
-        if let authorization = authorization {
-            if case let .bearerToken(token) = authorization, let bearerToken = token {
-                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
-            }
-        }
-        
-        if let params = parameters {
-            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
-            switch method {
-            case .post:
-                do {
-                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
-                    request.httpBody = jsonParams
-                } catch {
-                    handler(.failure(.badRequest(params)))
-                    return
-                }
-            case .get:
-                guard var finalUrl = URLComponents(string: encodedUrl) else {
-                    return handler(.failure(.badUrl))
-                }
-                
-                finalUrl.queryItems = params.map { key, value in
-                    URLQueryItem(name: key, value: value as? String)
-                }
-                
-                finalUrl.percentEncodedQuery =
-                    finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-
-                // re-assign the url with parameter components to the request
-                request.url = finalUrl.url
-            }
-        }
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            
-            // handle transport error
-            if let _ = error {
-                DispatchQueue.main.async {
-                    handler(
-                        .failure(.transportError)
-                    )
-                }
-                return
-            }
-            
-            guard let response = response as? HTTPURLResponse, let responseBody = data
-            else {
-                DispatchQueue.main.async {
-                    handler(
-                        .failure(.transportError)
-                    )
-                }
-                return
-            }
-            
-            let statusCode = HTTPStatus(response.statusCode)
-            
-            if case .success = statusCode {
-                /// success handling
-                DispatchQueue.main.async {
-                    handler(.success(responseBody))
-                }
-            } else {
-                /// HTTP server-side error handling
-                // Printout the information
-                if let responseString = String(bytes: responseBody, encoding: .utf8) {
-                    debugPrint(responseString)
-                } else {
-                    // Otherwise print a hex dump of the body.
-                    debugPrint("ClassClapNetwork: hex dump of the body")
-                    debugPrint(responseBody as NSData)
-                }
-                
-                // return with error handler
-                DispatchQueue.main.async {
-                    handler(
-                        .failure(.httpSeverSideError(responseBody, statusCode: statusCode))
-                    )
-                }
-                return
-            }
-        }.resume()
-    }
-}
-
-extension Network.NetworkError: LocalizedError {
-    public var errorDescription: String? {
-        switch self {
-        case .badUrl:
-            return "ClassClapNetwork: This seem not a vail url"
-        case .transportError:
-            return "ClassClapNetwork: There is a transport error"
-        case .httpSeverSideError( _,let statusCode):
-            let code = statusCode.rawValue
-            return "ClassClapNetwork: There is a http server error with status code \(code)"
-        case .badRequest(let parameters):
-            return "this parameter set is invalid, check it again \n\(parameters)"
-        }
     }
 }
