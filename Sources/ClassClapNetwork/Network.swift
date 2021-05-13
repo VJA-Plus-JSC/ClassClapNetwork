@@ -13,10 +13,12 @@ open class Network {
     /// shared instance of Network class
     public static let shared = Network()
     
-    /// network handler closure
+    /// network handle closure
     public typealias NetworkHandler = (Result<Data, NetworkError>) -> ()
     
-    public typealias NetworkGenericHandler<T: Codable> = (Result<T, NetworkError>) -> ()
+    public typealias GenericResult<T: Codable> = Result<T, NetworkError>
+    // network hanle generic closure
+    public typealias NetworkGenericHandler<T: Codable> = (GenericResult<T>) -> ()
     
     /// private init to avoid unexpected instances allocate
     private init() {}
