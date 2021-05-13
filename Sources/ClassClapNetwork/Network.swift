@@ -207,7 +207,7 @@ extension Network {
     ///   - authorization: the authorization method, such as bearer token for example
     ///   - params: http request body's parameters.
     ///   - handler: Handling when completion, included success and failure
-    public func sendRequest<T: Codable>(
+    public func getObjectViaRequest<T: Codable>(
         as method: Method = .post,
         to link: String,
         timeout: TimeInterval = 60.0,
