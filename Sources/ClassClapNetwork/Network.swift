@@ -439,6 +439,14 @@ extension Network {
 // MARK: - New Swift 5.5 Async await
 extension Network {
     @available(iOS 15.0, *)
+    /// Get the expected JSON - codable object via a HTTP request.
+    /// - Parameters:
+    ///   - method: the desired `HTTP method`.
+    ///   - link: URL of the request in plain text.
+    ///   - timeout: request timeout.
+    ///   - authorization: The authorization of the request.
+    ///   - parameters: request's parameter.
+    /// - Returns: the expected JSON object.
     public func getObjectViaRequest<T: Codable>(
         as method: Method = .post,
         to link: String,
@@ -447,9 +455,65 @@ extension Network {
         parameters: [String : Any?]? = nil
     ) async throws -> T {
         
+        // create request
+        guard let requestResult = try? createRequest(
+            from: link,
+            as: method,
+            timeout: timeout,
+            authorization: authorization
+        )
+        else {
+            throw NetworkError.badUrl
+        }
+        
+        var request = requestResult.request
+        let encodedUrl = requestResult.encodedUrl
+        
+        // config request
+        do {
+            try
+            requestConfig(&request, method: method, encodedUrl: encodedUrl, parameters: parameters)
+        } catch {
+            throw error
+        }
+        
+        // try to get data from request
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard
+            let httpResponse = response as? HTTPURLResponse,
+            HTTPStatus(httpResponse.statusCode) == .success
+        else {
+            throw NetworkError.transportError
+        }
+        
+        guard let object = try? JSONDecoder().decode(T.self, from: data) else {
+            throw NetworkError.jsonFormatError
+        }
+        
+        return object
+    }
+}
+
+// MARK: - URL Request header configuration
+extension Network {
+    /// Create an `URL request` with its associated `encoded URL`.
+    /// - Parameters:
+    ///   - urlString: URL of the request in plain text.
+    ///   - method: the desired `HTTP method`.
+    ///   - timeout: request timeout.
+    ///   - authorization: The authorization of the request.
+    /// - Returns: a request object and its encoded URL.
+    private func createRequest(
+        from urlString: String,
+        as method: Method,
+        timeout: TimeInterval,
+        authorization: Authorization? = nil
+    ) throws -> (request: URLRequest, encodedUrl: String) {
         // encode url (to encode spaces for example)
         guard
-            let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+            let encodedUrl = urlString
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
         else {
             throw NetworkError.badUrl
         }
@@ -468,54 +532,57 @@ extension Network {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-            // add Authorization information if has
+        // add Authorization information if has
         if let authorization = authorization {
             if case let .bearerToken(token) = authorization, let bearerToken = token {
                 request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
             }
         }
         
-        if let params = parameters {
-            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
-            switch method {
-            case .post:
-                do {
-                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
-                    request.httpBody = jsonParams
-                } catch {
-                    throw NetworkError.badRequest(params)
-                }
-            case .get:
-                guard var finalUrl = URLComponents(string: encodedUrl) else {
-                    throw NetworkError.badUrl
-                }
-                
-                finalUrl.queryItems = params.map { key, value in
-                    // in case value is nil, replace by blank space instead
-                    URLQueryItem(name: key, value: String(describing: value ?? ""))
-                }
-                
-                finalUrl.percentEncodedQuery =
-                finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-                
-                // re-assign the url with parameter components to the request
-                request.url = finalUrl.url
+        return (request, encodedUrl)
+    }
+    
+    /// configurate an `URL request` with a valid format parameters, method, etc.
+    /// - Parameters:
+    ///   - request: the request to config.
+    ///   - method: the desired `HTTP method`.
+    ///   - encodedUrl: the encoded `URL` of the request, incase it contains special charaters.
+    ///   - parameters: request's parameter.
+    private func requestConfig(
+        _ request: inout URLRequest,
+        method: Method,
+        encodedUrl: String,
+        parameters: [String : Any?]? = nil
+    ) throws {
+        guard let parameters = parameters else {
+            return
+        }
+        
+        // only put parameter in HTTP body of a POST request, for GET, add directly to the url
+        switch method {
+        case .post:
+            guard
+                let json = try? JSONSerialization.data(withJSONObject: parameters, options: [])
+            else {
+                throw NetworkError.badRequest(parameters)
             }
+            request.httpBody = json
+        case .get:
+            guard var finalUrl = URLComponents(string: encodedUrl) else {
+                throw NetworkError.badUrl
+            }
+            
+            finalUrl.queryItems = parameters.map { key, value in
+                    // in case value is nil, replace by blank space instead
+                URLQueryItem(name: key, value: String(describing: value ?? ""))
+            }
+            
+            finalUrl.percentEncodedQuery = finalUrl
+                .percentEncodedQuery?
+                .replacingOccurrences(of: "+", with: "%2B")
+            
+                // re-assign the url with parameter components to the request
+            request.url = finalUrl.url
         }
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard
-            let httpResponse = response as? HTTPURLResponse,
-            HTTPStatus(httpResponse.statusCode) == .success
-        else {
-            throw NetworkError.transportError
-        }
-        
-        guard let object = try? JSONDecoder().decode(T.self, from: data) else {
-            throw NetworkError.jsonFormatError
-        }
-        
-        return object
     }
 }
