@@ -438,5 +438,84 @@ extension Network {
 
 // MARK: - New Swift 5.5 Async await
 extension Network {
-    
+    @available(iOS 15.0, *)
+    public func getObjectViaRequest<T: Codable>(
+        as method: Method = .post,
+        to link: String,
+        timeout: TimeInterval = 60.0,
+        authorization: Authorization? = nil,
+        parameters: [String : Any?]? = nil
+    ) async throws -> T {
+        
+        // encode url (to encode spaces for example)
+        guard
+            let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        else {
+            throw NetworkError.badUrl
+        }
+        
+        guard let url = URL(string: encodedUrl) else {
+            // bad url
+            throw NetworkError.badUrl
+        }
+        
+        var request = URLRequest(
+            url: url,
+            cachePolicy: .reloadIgnoringLocalCacheData,
+            timeoutInterval: timeout
+        )
+        
+        request.httpMethod = method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+            // add Authorization information if has
+        if let authorization = authorization {
+            if case let .bearerToken(token) = authorization, let bearerToken = token {
+                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        
+        if let params = parameters {
+            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
+            switch method {
+            case .post:
+                do {
+                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
+                    request.httpBody = jsonParams
+                } catch {
+                    throw NetworkError.badRequest(params)
+                }
+            case .get:
+                guard var finalUrl = URLComponents(string: encodedUrl) else {
+                    throw NetworkError.badUrl
+                }
+                
+                finalUrl.queryItems = params.map { key, value in
+                    // in case value is nil, replace by blank space instead
+                    URLQueryItem(name: key, value: String(describing: value ?? ""))
+                }
+                
+                finalUrl.percentEncodedQuery =
+                finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+                
+                // re-assign the url with parameter components to the request
+                request.url = finalUrl.url
+            }
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard
+            let httpResponse = response as? HTTPURLResponse,
+            HTTPStatus(httpResponse.statusCode) == .success
+        else {
+            throw NetworkError.transportError
+        }
+        
+        guard let object = try? JSONDecoder().decode(T.self, from: data) else {
+            throw NetworkError.jsonFormatError
+        }
+        
+        return object
+    }
 }
