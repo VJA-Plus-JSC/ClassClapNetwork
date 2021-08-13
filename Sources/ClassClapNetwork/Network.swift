@@ -491,6 +491,13 @@ extension Network {
         }.resume()
     }
     
+    /// Configurate the HTTP Request body base on conditions
+    /// - Parameters:
+    ///   - request:the request that need to config.
+    ///   - encodedUrl: plain string of the encoded url.
+    ///   - parameters: http request body's parameters.
+    ///   - method: HTTP method, `POST` in default.
+    ///   - completion: Handling when completion, included success and failure
     private func configRequestBody<T: Codable>(
         of request: inout URLRequest,
         encodedUrl: String,
