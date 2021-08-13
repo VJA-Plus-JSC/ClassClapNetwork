@@ -332,31 +332,13 @@ extension Network {
         }
 
         if let params = parameters {
-            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
-            switch method {
-            case .post:
-                do {
-                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
-                    request.httpBody = jsonParams
-                } catch {
-                    return handler(.failure(.badRequest(params)))
-                }
-            case .get:
-                guard var finalUrl = URLComponents(string: encodedUrl) else {
-                    return handler(.failure(.badUrl))
-                }
-
-                finalUrl.queryItems = params.map { key, value in
-                    // in case value is nil, replace by blank space instead
-                    URLQueryItem(name: key, value: String(describing: value ?? ""))
-                }
-
-                finalUrl.percentEncodedQuery =
-                    finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-
-                // re-assign the url with parameter components to the request
-                request.url = finalUrl.url
-            }
+            configRequestBody(
+                of: &request,
+                encodedUrl: encodedUrl,
+                parameters: params,
+                method: method,
+                completion: handler
+            )
         }
 
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -422,8 +404,7 @@ extension Network {
     ) {
         
         // encode url (to encode spaces for example)
-        guard
-            let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        guard let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
         else {
             return handler(.failure(.badUrl))
         }
@@ -450,31 +431,13 @@ extension Network {
         }
         
         if let params = parameters {
-            // only put parameter in HTTP body of a POST request, for GET, add directly to the url
-            switch method {
-            case .post:
-                do {
-                    let jsonParams = try JSONSerialization.data(withJSONObject: params, options: [])
-                    request.httpBody = jsonParams
-                } catch {
-                    return handler(.failure(.badRequest(params)))
-                }
-            case .get:
-                guard var finalUrl = URLComponents(string: encodedUrl) else {
-                    return handler(.failure(.badUrl))
-                }
-                
-                finalUrl.queryItems = params.map { key, value in
-                    // in case value is nil, replace by blank space instead
-                    URLQueryItem(name: key, value: String(describing: value ?? ""))
-                }
-                
-                finalUrl.percentEncodedQuery =
-                    finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-                
-                // re-assign the url with parameter components to the request
-                request.url = finalUrl.url
-            }
+            configRequestBody(
+                of: &request,
+                encodedUrl: encodedUrl,
+                parameters: params,
+                method: method,
+                completion: handler
+            )
         }
         
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -527,9 +490,44 @@ extension Network {
             }
         }.resume()
     }
+    
+    private func configRequestBody<T: Codable>(
+        of request: inout URLRequest,
+        encodedUrl: String,
+        parameters: [String : Any?],
+        method: Method,
+        completion: @escaping NetworkGenericHandler<T>
+    ) {
+        // only put parameter in HTTP body of a POST request, for GET, add directly to the url
+        switch method {
+            case .post:
+                do {
+                    let json = try JSONSerialization.data(withJSONObject: parameters, options: [])
+                    request.httpBody = json
+                } catch {
+                    return completion(.failure(.badRequest(parameters)))
+                }
+            case .get:
+                guard var finalUrl = URLComponents(string: encodedUrl) else {
+                    return completion(.failure(.badUrl))
+                }
+                
+                finalUrl.queryItems = parameters.map { key, value in
+                    // in case value is nil, replace by blank space instead
+                    URLQueryItem(name: key, value: String(describing: value ?? ""))
+                }
+                
+                finalUrl.percentEncodedQuery =
+                finalUrl.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+                
+                // re-assign the url with parameter components to the request
+                request.url = finalUrl.url
+        }
+    }
 }
 
 // MARK: - New Swift 5.5 Async await
+@available(swift 5.5)
 extension Network {
     @available(iOS 15.0, *)
     /// Get the expected JSON - codable object via a HTTP request.
@@ -564,8 +562,12 @@ extension Network {
         
         // config request
         do {
-            try
-            requestConfig(&request, method: method, encodedUrl: encodedUrl, parameters: parameters)
+            try requestConfig(
+              &request,
+              method: method,
+              encodedUrl: encodedUrl,
+              parameters: parameters
+            )
         } catch {
             throw error
         }
