@@ -108,9 +108,9 @@ extension Network {
     ///   - completion: Handling when completion, included success and failure
     internal func requestConfig<T: Codable>(
         _ request: inout URLRequest,
+        method: Method,
         encodedUrl: String,
         parameters: [String : Any?],
-        method: Method,
         completion: @escaping NetworkGenericHandler<T>
     ) {
         // only put parameter in HTTP body of a POST request, for GET, add directly to the url

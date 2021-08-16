@@ -53,9 +53,9 @@ extension Network {
         if let params = parameters {
             requestConfig(
                 &request,
+                method: method,
                 encodedUrl: encodedUrl,
                 parameters: params,
-                method: method,
                 completion: handler
             )
         }
@@ -152,9 +152,9 @@ extension Network {
         if let params = parameters {
             requestConfig(
                 &request,
+                method: method,
                 encodedUrl: encodedUrl,
                 parameters: params,
-                method: method,
                 completion: handler
             )
         }
