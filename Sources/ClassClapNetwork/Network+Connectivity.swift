@@ -79,6 +79,7 @@ extension Network.Connectivity {
  */
 #if DEBUG
 extension Network.Connectivity {
+    
     public static var monitorChangeHandlers = [((Network.ConnectionState) -> Void)]() {
         didSet {
             if #available(iOSApplicationExtension 12.0, *) {
@@ -105,7 +106,9 @@ extension Network.Connectivity {
         }
     }
     
-    static func addObserveReachabilityChange(handler: @escaping ((Network.ConnectionState) -> Void)) {
+    static func addObserveReachabilityChange(
+        handler: @escaping ((Network.ConnectionState) -> Void)
+    ) {
         if #available(iOSApplicationExtension 12.0, *) {
             // start the queue if needed
             if let _ = monitor?.queue {
