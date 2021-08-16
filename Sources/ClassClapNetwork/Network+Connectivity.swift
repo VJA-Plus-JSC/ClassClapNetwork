@@ -28,6 +28,7 @@ extension Network.Connectivity {
     public static func isNetworkReacability() -> Bool {
         if #available(iOSApplicationExtension 12.0, *) {
             guard
+                // if there are no interfaces, the current path is none.
                 let monitor = monitor, monitor.currentPath.availableInterfaces.count > 0
             else {
                 return false
@@ -38,6 +39,8 @@ extension Network.Connectivity {
         }
     }
     
+    /// Check reachability in iOS lower than 12
+    /// - Returns: is Network status reachability or not
     private static func isReachability() -> Bool {
         var zeroAddress = sockaddr_in()
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
