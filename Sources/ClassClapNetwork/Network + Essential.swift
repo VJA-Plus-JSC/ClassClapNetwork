@@ -20,7 +20,7 @@ extension Network {
     internal func createRequest(
         from urlString: String,
         as method: Method,
-        timeout: TimeInterval,
+        timeout: TimeInterval = 60.0,
         authorization: Authorization? = nil
     ) throws -> (request: URLRequest, encodedUrl: String) {
         // encode url (to encode spaces for example)

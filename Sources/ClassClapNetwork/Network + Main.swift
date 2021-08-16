@@ -24,31 +24,17 @@ extension Network {
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkHandler
     ) {
-        
-        // encode url (to encode spaces for example)
-        guard let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        guard let requestResult = try? createRequest(
+            from: link,
+            as: method,
+            authorization: authorization
+        )
         else {
             return handler(.failure(.badUrl))
         }
         
-        guard let url = URL(string: encodedUrl) else {
-            // bad url
-            return handler(.failure(.badUrl))
-        }
-        
-        var request = URLRequest(url: url,
-                                 cachePolicy: .reloadIgnoringLocalCacheData,
-                                 timeoutInterval: 60.0)
-        
-        request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // add Authorization information if has
-        if let authorization = authorization {
-            if case let .bearerToken(token) = authorization, let bearerToken = token {
-                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
-            }
-        }
+        var request = requestResult.request
+        let encodedUrl = requestResult.encodedUrl
         
         if let params = parameters {
             requestConfig(
@@ -121,33 +107,17 @@ extension Network {
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkGenericHandler<ObjectType>
     ) {
-        
-        // encode url (to encode spaces for example)
-        guard let encodedUrl = link.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        guard let requestResult = try? createRequest(
+            from: link,
+            as: method,
+            authorization: authorization
+        )
         else {
             return handler(.failure(.badUrl))
         }
         
-        guard let url = URL(string: encodedUrl) else {
-            // bad url
-            return handler(.failure(.badUrl))
-        }
-        
-        var request = URLRequest(
-            url: url,
-            cachePolicy: .reloadIgnoringLocalCacheData,
-            timeoutInterval: timeout
-        )
-        
-        request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // add Authorization information if has
-        if let authorization = authorization {
-            if case let .bearerToken(token) = authorization, let bearerToken = token {
-                request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
-            }
-        }
+        var request = requestResult.request
+        let encodedUrl = requestResult.encodedUrl
         
         if let params = parameters {
             requestConfig(
