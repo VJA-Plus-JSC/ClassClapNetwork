@@ -113,13 +113,13 @@ extension Network {
     ///   - authorization: the authorization method, such as bearer token for example
     ///   - params: http request body's parameters.
     ///   - handler: Handling when completion, included success and failure
-    public func getObjectViaRequest<T: Codable>(
+    public func getObjectViaRequest<ObjectType: Codable>(
         as method: Method = .post,
         to link: String,
         timeout: TimeInterval = 60.0,
         authorization: Authorization? = nil,
         parameters: [String : Any?]? = nil,
-        completion handler: @escaping NetworkGenericHandler<T>
+        completion handler: @escaping NetworkGenericHandler<ObjectType>
     ) {
         
         // encode url (to encode spaces for example)
@@ -182,7 +182,7 @@ extension Network {
                 DispatchQueue.main.async {
                     //handler(.success(responseBody))
                     do {
-                        let object = try JSONDecoder().decode(T.self, from: responseBody)
+                        let object = try JSONDecoder().decode(ObjectType.self, from: responseBody)
                         handler(.success(object))
                     } catch {
                         handler(.failure(.jsonFormatError))

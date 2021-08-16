@@ -19,13 +19,13 @@ extension Network {
     ///   - authorization: The authorization of the request.
     ///   - parameters: request's parameter.
     /// - Returns: the expected JSON object.
-    public func getObjectViaRequest<T: Codable>(
+    public func getObjectViaRequest<ObjectType: Codable>(
         as method: Method = .post,
         to link: String,
         timeout: TimeInterval = 60.0,
         authorization: Authorization? = nil,
         parameters: [String : Any?]? = nil
-    ) async throws -> T {
+    ) async throws -> ObjectType {
         
         // create request
         guard let requestResult = try? createRequest(
@@ -63,7 +63,7 @@ extension Network {
             throw NetworkError.transportError
         }
         
-        guard let object = try? JSONDecoder().decode(T.self, from: data) else {
+        guard let object = try? JSONDecoder().decode(ObjectType.self, from: data) else {
             throw NetworkError.jsonFormatError
         }
         
