@@ -8,7 +8,6 @@
 
 import Network
 import SystemConfiguration
-import CFNetwork
 
 extension Network {
     
@@ -28,13 +27,18 @@ extension Network.Connectivity {
     
     public static func isNetworkReacability() -> Bool {
         if #available(iOSApplicationExtension 12.0, *) {
-            return monitor?.currentPath.status ?? .unsatisfied == .satisfied
+            guard
+                let monitor = monitor, monitor.currentPath.availableInterfaces.count > 0
+            else {
+                return false
+            }
+            return monitor.currentPath.status == .satisfied
         } else {
-            return isNetworkReachabilityIOS11()
+            return isReachability()
         }
     }
     
-    private static func isNetworkReachabilityIOS11() -> Bool {
+    private static func isReachability() -> Bool {
         var zeroAddress = sockaddr_in()
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)
