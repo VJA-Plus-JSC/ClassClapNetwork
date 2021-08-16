@@ -5,12 +5,16 @@
 //  Created by Quân Đinh on 13.08.21.
 //  Copyright © 2021 VJA Plus. All rights reserved.
 //
+
 import Network
+import SystemConfiguration
+import CFNetwork
 
 extension Network {
-    public enum Reachability {
+    
+    public enum ConnectionState {
         case available
-        case unavailabe
+        case requiresConnection
     }
     
     public class Connectivity {
@@ -18,21 +22,21 @@ extension Network {
         @available(iOSApplicationExtension 12.0, *)
         private static var monitor: NWPathMonitor? = NWPathMonitor()
         
-        public static var monitorChangeHandlers = [((Reachability) -> Void)]() {
+        public static var monitorChangeHandlers = [((ConnectionState) -> Void)]() {
             didSet {
                 if #available(iOSApplicationExtension 12.0, *) {
-                    var newState: Reachability = .unavailabe
+                    var newState: ConnectionState = .requiresConnection
                     // re-assign the observe events
                     monitor?.pathUpdateHandler = { path in
                         switch path.status {
                             case .satisfied:
                                 newState = .available
                             case .unsatisfied:
-                                newState = .unavailabe
+                                newState = .requiresConnection
                             case .requiresConnection:
-                                break
+                                newState = .requiresConnection
                             @unknown default:
-                                fatalError("Need to update the new case of NWPath.Status")
+                                break
                         }
                         for handler in monitorChangeHandlers {
                             handler(newState)
@@ -44,7 +48,7 @@ extension Network {
             }
         }
         
-        static func addObserveReachabilityChange(handler: @escaping ((Reachability) -> Void)) {
+        static func addObserveReachabilityChange(handler: @escaping ((ConnectionState) -> Void)) {
             if #available(iOSApplicationExtension 12.0, *) {
                 // start the queue if needed
                 if let _ = monitor?.queue {
@@ -58,13 +62,37 @@ extension Network {
             }
             monitorChangeHandlers.append(handler)
         }
+    }
+}
+
+extension Network.Connectivity {
+    
+    public static func isConnectedToNetwork() -> Bool {
+        var zeroAddress = sockaddr_in()
+        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
+        zeroAddress.sin_family = sa_family_t(AF_INET)
         
-        static func connectivityMonitorSetup() {
-            if #available(iOSApplicationExtension 12.0, *) {
-                monitor = nil
-            } else {
-                // TODO: Reachability object will be nil
-            }
+        guard
+            let defaultRouteReachability = withUnsafePointer(
+                to:&zeroAddress,
+                {
+                    $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { zeroSockAddress in
+                        SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
+                    }
+                }
+            )
+        else {
+            return false
         }
+        
+        var flags : SCNetworkReachabilityFlags = []
+        if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) {
+            return false
+        }
+        
+        let isReachable = flags.contains(.reachable)
+        let needsConnection = flags.contains(.connectionRequired)
+        
+        return (isReachable && !needsConnection)
     }
 }
