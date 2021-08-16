@@ -106,8 +106,8 @@ extension Network {
     ///   - parameters: http request body's parameters.
     ///   - method: HTTP method, `POST` in default.
     ///   - completion: Handling when completion, included success and failure
-    internal func configRequestBody<T: Codable>(
-        of request: inout URLRequest,
+    internal func requestConfig<T: Codable>(
+        _ request: inout URLRequest,
         encodedUrl: String,
         parameters: [String : Any?],
         method: Method,

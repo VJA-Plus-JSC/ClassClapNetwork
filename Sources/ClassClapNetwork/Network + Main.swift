@@ -51,8 +51,8 @@ extension Network {
         }
         
         if let params = parameters {
-            configRequestBody(
-                of: &request,
+            requestConfig(
+                &request,
                 encodedUrl: encodedUrl,
                 parameters: params,
                 method: method,
@@ -150,8 +150,8 @@ extension Network {
         }
         
         if let params = parameters {
-            configRequestBody(
-                of: &request,
+            requestConfig(
+                &request,
                 encodedUrl: encodedUrl,
                 parameters: params,
                 method: method,
