@@ -19,7 +19,7 @@ extension Network {
     /// - Returns: a request object and its encoded URL.
     internal func createRequest(
         from urlString: String,
-        as method: Method,
+        as method: Method = .post,
         timeout: TimeInterval = 60.0,
         authorization: Authorization? = nil
     ) throws -> (request: URLRequest, encodedUrl: String) {
