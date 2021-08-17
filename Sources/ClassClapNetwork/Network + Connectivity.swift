@@ -19,6 +19,7 @@ extension Network {
     public class Connectivity {
         // https://www.hackingwithswift.com/example-code/networking/how-to-check-for-internet-connectivity-using-nwpathmonitor
         @available(iOSApplicationExtension 12.0, *)
+        @available(iOS 12.0, *)
         private static var monitor: NWPathMonitor? = NWPathMonitor()
     }
 }
@@ -26,7 +27,7 @@ extension Network {
 extension Network.Connectivity {
     
     public static func isNetworkReacability() -> Bool {
-        if #available(iOSApplicationExtension 12.0, *) {
+        if #available(iOSApplicationExtension 12.0, iOS 12.0, *) {
             guard
                 // if there are no interfaces, the current path is none.
                 let monitor = monitor, monitor.currentPath.availableInterfaces.count > 0
@@ -82,7 +83,7 @@ extension Network.Connectivity {
     
     public static var monitorChangeHandlers = [((Network.ConnectionState) -> Void)]() {
         didSet {
-            if #available(iOSApplicationExtension 12.0, *) {
+            if #available(iOSApplicationExtension 12.0, iOS 12.0, *) {
                 var newState: Network.ConnectionState = .requiresConnection
                 // re-assign the observe events
                 monitor?.pathUpdateHandler = { path in
@@ -109,7 +110,7 @@ extension Network.Connectivity {
     static func addObserveReachabilityChange(
         handler: @escaping ((Network.ConnectionState) -> Void)
     ) {
-        if #available(iOSApplicationExtension 12.0, *) {
+        if #available(iOSApplicationExtension 12.0, iOS 12.0, *) {
             // start the queue if needed
             if let _ = monitor?.queue {
                 
