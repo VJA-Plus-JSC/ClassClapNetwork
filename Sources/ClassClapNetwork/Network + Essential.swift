@@ -80,7 +80,7 @@ extension Network {
                     throw NetworkError.badRequest(parameters)
                 }
                 request.httpBody = json
-            case .get:
+            case .get, .delete:
                 guard var finalUrl = URLComponents(string: encodedUrl) else {
                     throw NetworkError.badUrl
                 }
@@ -122,7 +122,7 @@ extension Network {
                 } catch {
                     return completion(.failure(.badRequest(parameters)))
                 }
-            case .get:
+            case .get, .delete:
                 guard var finalUrl = URLComponents(string: encodedUrl) else {
                     return completion(.failure(.badUrl))
                 }
