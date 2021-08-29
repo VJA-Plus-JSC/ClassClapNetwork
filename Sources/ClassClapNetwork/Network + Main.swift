@@ -19,13 +19,13 @@ extension Network {
     ///   - handler: Handling when completion, included success and failure
     public func sendRequest(
         as method: Method = .post,
-        to link: String,
+        to url: String,
         authorization: Authorization? = nil,
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkHandler
     ) {
         guard let requestResult = try? createRequest(
-            from: link,
+            from: url,
             as: method,
             authorization: authorization
         )
@@ -101,14 +101,14 @@ extension Network {
     ///   - handler: Handling when completion, included success and failure
     public func getObjectViaRequest<ObjectType: Codable>(
         as method: Method = .post,
-        to link: String,
+        to url: String,
         timeout: TimeInterval = 60.0,
         authorization: Authorization? = nil,
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkGenericHandler<ObjectType>
     ) {
         guard let requestResult = try? createRequest(
-            from: link,
+            from: url,
             as: method,
             authorization: authorization
         )
