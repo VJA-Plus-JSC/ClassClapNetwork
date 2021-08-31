@@ -24,7 +24,7 @@ extension Network {
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkHandler
     ) {
-        guard let requestResult = try? createRequest(
+        guard let requestResult = try? generateRequest(
             from: url,
             as: method,
             authorization: authorization
@@ -107,7 +107,7 @@ extension Network {
         parameters: [String : Any?]? = nil,
         completion handler: @escaping NetworkGenericHandler<ObjectType>
     ) {
-        guard let requestResult = try? createRequest(
+        guard let requestResult = try? generateRequest(
             from: url,
             as: method,
             authorization: authorization

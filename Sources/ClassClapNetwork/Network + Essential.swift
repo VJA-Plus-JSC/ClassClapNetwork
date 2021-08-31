@@ -17,7 +17,7 @@ extension Network {
     ///   - timeout: request timeout.
     ///   - authorization: The authorization of the request.
     /// - Returns: a request object and its encoded URL.
-    internal func createRequest(
+    internal func generateRequest(
         from urlString: String,
         as method: Method = .post,
         timeout: TimeInterval = 60.0,
@@ -138,5 +138,39 @@ extension Network {
                 // re-assign the url with parameter components to the request
                 request.url = finalUrl.url
         }
+    }
+        
+    public func createRequest(
+        from url: String,
+        as method: Method = .post,
+        timeout: TimeInterval = 60.0,
+        authorization: Authorization? = nil,
+        parameters: [String : Any?]? = nil
+    ) -> URLRequest? {
+        guard let requestResult = try? generateRequest(
+            from: url,
+            as: method,
+            authorization: authorization
+        )
+        else {
+            return nil
+        }
+        
+        var request = requestResult.request
+        let encodedUrl = requestResult.encodedUrl
+        
+        if let params = parameters {
+            do {
+                try requestConfig(
+                    &request,
+                    method: method,
+                    encodedUrl: encodedUrl,
+                    parameters: params
+                )
+            } catch {
+                return nil
+            }
+        }
+        return request
     }
 }

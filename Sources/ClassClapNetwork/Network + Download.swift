@@ -7,6 +7,22 @@
 
 import Foundation
 
+/*
+ Usage:
+ - Create an instance of DownloadTask to keep track on it.
+ - Use DownloadQueue to handle mutiple DownloadTasks
+ ```
+ let request = createRequest(from:, as:, timeout:, authorization:, parameters:)
+ let downloadTask = DownloadQueue.shared.download(request)
+ downloadTask.completionHandler = {
+    ...
+ }
+ downloadTask.progressHandler = {
+    ...
+ }
+ ```
+ */
+
 protocol DownloadTask {
     var completionHandler: Network.DownloadHandler? { get set }
     var progressHandler: Network.ProcessHandler? { get set }
@@ -65,7 +81,7 @@ extension Network {
             session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         }
         
-        func download(request: URLRequest) -> DownloadTask {
+        func download(_ request: URLRequest) -> DownloadTask {
             let task = self.session.dataTask(with: request)
             let downloadTask = GenericDownloadTask(task)
             queue.append(downloadTask)
