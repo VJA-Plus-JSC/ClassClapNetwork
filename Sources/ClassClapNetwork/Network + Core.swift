@@ -12,6 +12,8 @@ open class Network {
         
     /// shared instance of Network class
     public static let shared = Network()
+  
+    internal let session = URLSession.shared
     
     /// network handle closure
     public typealias NetworkHandler = (Result<Data, NetworkError>) -> ()
@@ -35,6 +37,7 @@ open class Network {
         case httpSeverSideError(Data, statusCode: HTTPStatus)
         case badRequest([String: Any?])
         case jsonFormatError
+        case downloadServerSideError(statusCode: HTTPStatus)
     }
     
     public enum Authorization {
@@ -75,16 +78,19 @@ extension Network.NetworkError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .badUrl:
-            return "ClassClapNetwork: This seem not a vail url"
+            return "⛔️ ClassClapNetwork: This seem not a vail url."
         case .transportError:
-            return "ClassClapNetwork: There is a transport error"
+            return "⛔️ ClassClapNetwork: There is a transport error."
         case .httpSeverSideError( _,let statusCode):
             let code = statusCode.rawValue
-            return "ClassClapNetwork: There is a http server error with status code \(code)"
+            return "⛔️ ClassClapNetwork: There is a http server error with status code \(code)."
         case .badRequest(let parameters):
-            return "this parameter set is invalid, check it again \n\(parameters)"
+            return "⛔️ this parameter set is invalid, check it again \n\(parameters)."
         case .jsonFormatError:
-            return "Failed in trying to decode the response body to a JSON data"
+            return "⛔️ Failed in trying to decode the response body to a JSON data."
+        case .downloadServerSideError(let statusCode):
+            let code = statusCode.rawValue
+            return "⛔️ ClassClapNetwork: There is a http server error with status code \(code)."
         }
     }
 }

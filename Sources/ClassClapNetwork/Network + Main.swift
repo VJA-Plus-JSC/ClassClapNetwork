@@ -46,7 +46,7 @@ extension Network {
             )
         }
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             
             // handle transport error
             if let _ = error {
@@ -129,7 +129,7 @@ extension Network {
             )
         }
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             
             // handle transport error
             if let _ = error {
