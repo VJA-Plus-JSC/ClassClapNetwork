@@ -7,19 +7,19 @@
 
 import Foundation
 
-typealias DownloadHandler = (Result<Data, Error>) -> ()
-typealias ProcessHandler = (Double) -> Void
-
 protocol DownloadTask {
-    var completionHandler: DownloadHandler? { get set }
-    var progressHandler: ProcessHandler? { get set }
+    var completionHandler: Network.DownloadHandler? { get set }
+    var progressHandler: Network.ProcessHandler? { get set }
     
     func resume()
     func suspend()
     func cancel()
 }
+
 extension Network {
-    
+    typealias DownloadHandler = (Result<Data, Error>) -> ()
+    typealias ProcessHandler = (Double) -> Void
+
     class GenericDownloadTask: DownloadTask {
         var completionHandler: DownloadHandler?
         var progressHandler: ProcessHandler?
@@ -53,11 +53,11 @@ extension Network {
 }
 
 extension Network {
-    final class Downloader: NSObject {
+    final class DownloadQueue: NSObject {
         private var session: URLSession!
-        private var downloadTasks: [GenericDownloadTask] = []
+        private var queue: [GenericDownloadTask] = []
         
-        public static let shared = Downloader()
+        public static let shared = DownloadQueue()
         
         private override init() {
             super.init()
@@ -68,20 +68,20 @@ extension Network {
         func download(request: URLRequest) -> DownloadTask {
             let task = self.session.dataTask(with: request)
             let downloadTask = GenericDownloadTask(task)
-            downloadTasks.append(downloadTask)
+            queue.append(downloadTask)
             return downloadTask
         }
     }
 }
 
-extension Network.Downloader: URLSessionDataDelegate {
+extension Network.DownloadQueue: URLSessionDataDelegate {
     func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
         didReceive response: URLResponse,
         completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
     ) {
-        guard let task = downloadTasks.first(where: { $0.task == dataTask }) else {
+        guard let task = queue.first(where: { $0.task == dataTask }) else {
             completionHandler(.cancel)
             return
         }
@@ -90,7 +90,7 @@ extension Network.Downloader: URLSessionDataDelegate {
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        guard let task = downloadTasks.first(where: { $0.task == dataTask }) else {
+        guard let task = queue.first(where: { $0.task == dataTask }) else {
             return
         }
         task.buffer.append(data)
@@ -106,11 +106,11 @@ extension Network.Downloader: URLSessionDataDelegate {
         task: URLSessionTask,
         didCompleteWithError error: Error?
     ) {
-        guard let index = downloadTasks.firstIndex(where: { $0.task == task }) else {
+        guard let index = queue.firstIndex(where: { $0.task == task }) else {
             return
         }
         
-        let task = downloadTasks.remove(at: index)
+        let task = queue.remove(at: index)
         DispatchQueue.main.async {
             guard let error = error else {
                 task.completionHandler?(.success(task.buffer))
