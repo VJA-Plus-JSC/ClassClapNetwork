@@ -23,7 +23,7 @@ import Foundation
  ```
  */
 
-protocol DownloadTask {
+public protocol DownloadTask {
     var completionHandler: Network.DownloadHandler? { get set }
     var progressHandler: Network.ProcessHandler? { get set }
     
@@ -33,8 +33,8 @@ protocol DownloadTask {
 }
 
 extension Network {
-    typealias DownloadHandler = (Result<Data, Error>) -> ()
-    typealias ProcessHandler = (Double) -> Void
+    public typealias DownloadHandler = (Result<Data, Error>) -> ()
+    public typealias ProcessHandler = (Double) -> Void
 
     class GenericDownloadTask: DownloadTask {
         var completionHandler: DownloadHandler?

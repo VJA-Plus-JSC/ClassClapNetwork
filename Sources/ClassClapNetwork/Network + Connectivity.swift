@@ -16,6 +16,7 @@ extension Network {
         case requiresConnection
     }
     
+    @available(macOS 10.14, *)
     public class Connectivity {
         // https://www.hackingwithswift.com/example-code/networking/how-to-check-for-internet-connectivity-using-nwpathmonitor
         @available(iOSApplicationExtension 12.0, *)
@@ -24,6 +25,7 @@ extension Network {
     }
 }
 
+@available(macOS 10.14, *)
 extension Network.Connectivity {
     
     public static func isNetworkReacability() -> Bool {
@@ -79,6 +81,7 @@ extension Network.Connectivity {
  - https://github.com/ashleymills/Reachability.swift
  */
 #if DEBUG
+@available(macOS 10.14, *)
 extension Network.Connectivity {
     
     public static var monitorChangeHandlers = [((Network.ConnectionState) -> Void)]() {
