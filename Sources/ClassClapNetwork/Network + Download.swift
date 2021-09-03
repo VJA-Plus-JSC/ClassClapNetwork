@@ -69,7 +69,7 @@ extension Network {
 }
 
 extension Network {
-    final class DownloadQueue: NSObject {
+    public final class DownloadQueue: NSObject {
         private var session: URLSession!
         private var queue: [GenericDownloadTask] = []
         
@@ -91,7 +91,7 @@ extension Network {
 }
 
 extension Network.DownloadQueue: URLSessionDataDelegate {
-    func urlSession(
+    public func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
         didReceive response: URLResponse,
@@ -105,7 +105,7 @@ extension Network.DownloadQueue: URLSessionDataDelegate {
         completionHandler(.allow)
     }
     
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+    public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         guard let task = queue.first(where: { $0.task == dataTask }) else {
             return
         }
@@ -117,7 +117,7 @@ extension Network.DownloadQueue: URLSessionDataDelegate {
         }
     }
     
-    func urlSession(
+    public func urlSession(
         _ session: URLSession,
         task: URLSessionTask,
         didCompleteWithError error: Error?
