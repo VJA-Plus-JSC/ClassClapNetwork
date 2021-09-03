@@ -13,13 +13,15 @@ import Foundation
  - Use DownloadQueue to handle mutiple DownloadTasks
  ```
  let request = createRequest(from:, as:, timeout:, authorization:, parameters:)
- let downloadTask = DownloadQueue.shared.download(request)
+ let downloadTask = DownloadQueue.shared.downloadTask(from: request)
  downloadTask.completionHandler = {
     ...
  }
  downloadTask.progressHandler = {
     ...
  }
+ 
+ downloadTask.resume()
  ```
  */
 
@@ -42,6 +44,8 @@ extension Network {
         
         private(set) var task: URLSessionDataTask
         var expectedContentLength: Int64 = 0
+        
+        /// A buffer that stores the downloaded data.
         var buffer = Data()
         
         init(_ task: URLSessionDataTask) {
@@ -54,14 +58,17 @@ extension Network {
             #endif
         }
         
+        /// This will start or resume the download task
         func resume() {
             task.resume()
         }
         
+        /// This will suspend the download task without terminal it
         func suspend() {
             task.suspend()
         }
         
+        // this will cancel and terminal the download task
         func cancel() {
             task.cancel()
         }
@@ -81,7 +88,7 @@ extension Network {
             session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         }
         
-        public func download(_ request: URLRequest) -> DownloadTask {
+        public func downloadTask(from request: URLRequest) -> DownloadTask {
             let task = self.session.dataTask(with: request)
             let downloadTask = GenericDownloadTask(task)
             queue.append(downloadTask)
