@@ -81,7 +81,7 @@ extension Network {
             session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         }
         
-        func download(_ request: URLRequest) -> DownloadTask {
+        public func download(_ request: URLRequest) -> DownloadTask {
             let task = self.session.dataTask(with: request)
             let downloadTask = GenericDownloadTask(task)
             queue.append(downloadTask)

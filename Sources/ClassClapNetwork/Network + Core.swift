@@ -8,7 +8,7 @@
 
 import Foundation
 
-open class Network {
+public class Network {
         
     /// shared instance of Network class
     public static let shared = Network()
