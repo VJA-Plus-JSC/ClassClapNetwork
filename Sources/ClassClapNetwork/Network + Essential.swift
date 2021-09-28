@@ -73,7 +73,7 @@ extension Network {
         
         // only put parameter in HTTP body of a POST request, for GET, add directly to the url
         switch method {
-            case .post:
+            case .post, .put, .patch:
                 guard
                     let json = try? JSONSerialization.data(withJSONObject: parameters, options: [])
                 else {
@@ -115,7 +115,7 @@ extension Network {
     ) {
         // only put parameter in HTTP body of a POST request, for GET, add directly to the url
         switch method {
-            case .post:
+            case .post, .put, .patch:
                 do {
                     let json = try JSONSerialization.data(withJSONObject: parameters, options: [])
                     request.httpBody = json
