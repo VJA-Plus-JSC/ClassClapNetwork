@@ -26,9 +26,11 @@ public class Network {
     private init() {}
     
     public enum Method: String {
-        case get = "GET"
+        case `get` = "GET"
         case post = "POST"
         case delete = "DELETE"
+        case put = "PUT"
+        case patch = "PATCH"
     }
     
     public enum NetworkError: Error {
